@@ -1,6 +1,7 @@
 package main
 
 import (
+	"C"
 	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
@@ -50,7 +51,6 @@ func RequestClient(u string) []byte {
 	return body_bit
 }
 
-func main_so() {}
 func getOsArgsValue(s string, key string) string {
 	// 查找=的下标
 	index := strings.Index(s, "=")
@@ -285,6 +285,35 @@ func downFile(u string, p string) {
 
 func CleanCache() {
 	os.RemoveAll("./cache/")
+}
+
+// func C.CString(string) *C.char              //go字符串转化为char*
+// func C.CBytes([]byte) unsafe.Pointer        // go 切片转化为指针
+// func C.GoString(*C.char) string             //C字符串 转化为 go字符串
+// func C.GoStringN(*C.char, C.int) string
+// func C.GoBytes(unsafe.Pointer, C.int) []byte
+
+// C 语言类型                 CGO 类型      Go语言类型
+// char                       C.char        byte
+// singed char                C.schar       int8
+// unsigned char              C.uchar       uint8
+// short                      C.short       int16
+// unsigned short             C.ushort      uint16
+// int                        C.int         int32
+// unsigned int               C.uint        uint32
+// unsigned long	            C.ulong	     uint32
+// long long int	            C.longlong	   int64
+// unsigned long long int     C.ulonglong   uint64
+// float                      C.float       float32
+// double                     C.double      float64
+// size_t                     C.size_t      uint
+
+//export GoDown
+func GoDown(url *C.char, path *C.char) {
+	URL = C.GoString(url)
+	PATH = C.GoString(path)
+	Check()
+	downFile(URL, PATH)
 }
 
 func main() {
