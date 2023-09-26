@@ -22,6 +22,7 @@ type DM3u8 struct {
 	Key_Method string
 	Iv         string
 	Cache_Path string
+	tsLen      int
 }
 
 var (
@@ -73,6 +74,7 @@ func logPrintln(s string) {
 // 检查全局变量
 func Check() {
 	ChI = make(chan string, 4)
+	CleanCache()
 	LOG_PATH = "./down.log"
 	if URL == "" {
 		logPrintln("URL为空!")
@@ -163,15 +165,17 @@ func NewDMeu8(m3u string) *DM3u8 {
 			dm3u.TsList = append(dm3u.TsList, line)
 		}
 	}
+	dm3u.tsLen = len(dm3u.TsList)
 	// fmt.Println(dm3u)
 
 	return dm3u
 }
 
-func (dm *DM3u8) downTs(u string) {
+func (dm *DM3u8) downTs(u string, i int) {
 	// r := time.Duration(rand.Intn(3)) * time.Second
 	// time.Sleep(r)
-	path := dm.Cache_Path + "/" + u[strings.LastIndex(u, "/")+1:]
+	// path := dm.Cache_Path + "/" + u[strings.LastIndex(u, "/")+1:]
+	path := dm.Cache_Path + "/" + strconv.Itoa(i) + ".ts"
 	body_bit := RequestClient(u)
 
 	if dm.Key_Method != "" {
@@ -210,7 +214,7 @@ func downM3u8(m3u string) {
 	dm3 := NewDMeu8(m3u)
 	for i := 0; i < len(dm3.TsList); i++ {
 		wg.Add(1)
-		go dm3.downTs(dm3.TsList[i])
+		go dm3.downTs(dm3.TsList[i], i)
 		fmt.Println(i, dm3.TsList[i])
 		ChI <- dm3.TsList[i]
 	}
@@ -224,6 +228,10 @@ func downFile(u string, p string) {
 	} else {
 		ioutil.WriteFile(p, resb, 0666)
 	}
+}
+
+func CleanCache() {
+	os.RemoveAll("./cache/")
 }
 
 func main() {
