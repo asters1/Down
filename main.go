@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -170,8 +169,8 @@ func NewDMeu8(m3u string) *DM3u8 {
 }
 
 func (dm *DM3u8) downTs(u string) {
-	r := time.Duration(rand.Intn(3)) * time.Second
-	time.Sleep(r)
+	// r := time.Duration(rand.Intn(3)) * time.Second
+	// time.Sleep(r)
 	path := dm.Cache_Path + "/" + u[strings.LastIndex(u, "/")+1:]
 	body_bit := RequestClient(u)
 
