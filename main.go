@@ -108,6 +108,7 @@ func AES128Decrypt(crypted, key, iv []byte) ([]byte, error) {
 		return nil, err
 	}
 	blockSize := block.BlockSize()
+	// fmt.Println(iv)
 	if len(iv) == 0 {
 		iv = key
 	}
@@ -164,7 +165,7 @@ func NewDMeu8(m3u string) *DM3u8 {
 				dm3u.Iv = params["IV"]
 			}
 		} else {
-			dm3u.TsList = append(dm3u.TsList, line)
+			dm3u.TsList = append(dm3u.TsList, completionUrl(dm3u.BaseUrl, line))
 		}
 	}
 	dm3u.tsLen = len(dm3u.TsList)
