@@ -5,11 +5,13 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,6 +30,7 @@ var (
 	PATH     string
 	LOG_PATH string
 	ChI      chan string
+	wg       sync.WaitGroup
 )
 
 func RequestClient(u string) []byte {
@@ -167,6 +170,8 @@ func NewDMeu8(m3u string) *DM3u8 {
 }
 
 func (dm *DM3u8) downTs(u string) {
+	r := time.Duration(rand.Intn(3)) * time.Second
+	time.Sleep(r)
 	path := dm.Cache_Path + "/" + u[strings.LastIndex(u, "/")+1:]
 	body_bit := RequestClient(u)
 
@@ -195,17 +200,22 @@ func (dm *DM3u8) downTs(u string) {
 	file, _ := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	defer file.Close()
 	file.Write(body_bit)
-	a := <-ChI
+	// a := <-ChI
+	wg.Done()
+	<-ChI
 	// fmt.Println(path)
-	fmt.Println(a)
+	// fmt.Println(a)
 }
 
 func downM3u8(m3u string) {
 	dm3 := NewDMeu8(m3u)
 	for i := 0; i < len(dm3.TsList); i++ {
+		wg.Add(1)
 		go dm3.downTs(dm3.TsList[i])
+		fmt.Println(i, dm3.TsList[i])
 		ChI <- dm3.TsList[i]
 	}
+	wg.Wait()
 }
 
 func downFile(u string, p string) {
