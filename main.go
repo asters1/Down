@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -210,6 +212,55 @@ func (dm *DM3u8) downTs(u string, i int) {
 	// fmt.Println(a)
 }
 
+func (dm *DM3u8) merge() {
+	// 下载的段数应该等于m3u8段数
+	missingCount := 0
+	for idx := 0; idx < dm.tsLen; idx++ {
+		tsFilename := strconv.Itoa(idx) + ".ts"
+		f := filepath.Join(dm.Cache_Path, tsFilename)
+		fmt.Println(f)
+		if _, err := os.Stat(f); err != nil {
+			// fmt.Println("缺失文件!!!")
+			logPrintln("缺失文件!!")
+			missingCount++
+		}
+	}
+	if missingCount > 0 {
+		logPrintln("缺失Ts文件，未下载完整!")
+	}
+	// 创建一个TS文件用于合并，所有的Segment文件都会写入到这个文件中。
+	mFilePath := PATH
+	mFile, err := os.Create(mFilePath)
+	if err != nil {
+		logPrintln("创建文件[" + mFilePath + "]失败!")
+		os.Exit(500)
+	}
+	defer mFile.Close()
+	writer := bufio.NewWriter(mFile)
+	mergedCount := 0
+	for segIndex := 0; segIndex < dm.tsLen; segIndex++ {
+		tsFilename := strconv.Itoa(segIndex) + ".ts"
+		bytes, err := ioutil.ReadFile(filepath.Join(dm.Cache_Path, tsFilename))
+		_, err = writer.Write(bytes)
+		if err != nil {
+			continue
+		}
+		mergedCount++
+		// tool.DrawProgressBar("merge",
+		// 	float32(mergedCount)/float32(d.segLen), progressWidth)
+	}
+	_ = writer.Flush()
+	// Remove `ts` folder
+
+	if mergedCount != dm.tsLen {
+		logPrintln("合成失败!!")
+	} else {
+		fmt.Println("合成成功!")
+	}
+
+	fmt.Printf("\n[output] %s\n", mFilePath)
+}
+
 func downM3u8(m3u string) {
 	dm3 := NewDMeu8(m3u)
 	for i := 0; i < len(dm3.TsList); i++ {
@@ -219,6 +270,8 @@ func downM3u8(m3u string) {
 		ChI <- dm3.TsList[i]
 	}
 	wg.Wait()
+
+	dm3.merge()
 }
 
 func downFile(u string, p string) {
